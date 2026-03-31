@@ -471,7 +471,8 @@ function drawRoute(id, x1, y1, x2, y2, color, arrId, dashed) {
         path.style.transition = 'stroke-dashoffset 2s ease';
         requestAnimationFrame(() => { path.style.strokeDashoffset = 0; });
     } catch(e) {
-        // fallback: just show it
+        // getTotalLength() may fail in some older environments; the path will
+        // still render statically without animation as a fallback.
     }
 
     // Dot at destination
@@ -600,7 +601,8 @@ function handleQuiz(selIdx, choices) {
     updateStats();
 
     // All quiz choices share same next scene; pick from first non-null
-    const nextId = choices.find(c => c.next) && choices.find(c => c.next).next;
+    const nextChoice = choices.find(c => c.next);
+    const nextId = nextChoice && nextChoice.next;
     if (nextId) setTimeout(() => loadScene(nextId), 1700);
 }
 
@@ -635,7 +637,7 @@ const scenes = {
 'intro': {
     speaker: '항해사',
     text: '선장님, 심각한 상황입니다! <strong>1453년, 오스만 제국이 콘스탄티노플을 점령</strong>하며 동방으로 가는 모든 육로를 막아버렸습니다. 🌶️ 후추 1kg이 금과 같은 가격이 되었다고요!<br><br>유럽은 새로운 무역 항로를 찾아야만 살아남을 수 있습니다. 어떤 배경인지 더 알아볼까요?',
-    action: () => { stats.progress = 3; updateStats(); moveShip(75, 35, '이베리아 반도 (스페인/포르투갈)'); showChapter('제1장: 탐험의 시대'); },
+    action: () => { applyStats({ p: 3 }); moveShip(75, 35, '이베리아 반도 (스페인/포르투갈)'); showChapter('제1장: 탐험의 시대'); },
     choices: [
         { text: '배경 상황을 더 자세히 알고 싶다', next: 'background_detail' },
         { text: '바로 새 항로 탐색 시작!', next: 'technology' },
