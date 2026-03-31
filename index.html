@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>대항해시대</title>
+    <title>지구촌과 이주의 시대 (세계시민 편)</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Sans+KR:wght@400;700;900&display=swap');
 
@@ -11,14 +11,23 @@
 
         body {
             font-family: 'Noto Sans KR', sans-serif;
-            background: radial-gradient(circle at 50% 50%, #1a2a44 0%, #050a15 100%);
             color: #fff;
             overflow: hidden;
             width: 100vw;
             height: 100vh;
+            background-color: #050a15;
         }
 
-        /* 바다 및 지도 그리드 효과 (CSS만 사용) */
+        /* 고화질 세계지도 배경 (어두운 오버레이 처리) */
+        .world-map-bg {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(10, 20, 35, 0.7), rgba(10, 20, 35, 0.8)), 
+                        url('https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=2000&auto=format&fit=crop') center/cover;
+            z-index: 1;
+        }
+
+        /* 위도/경도 그리드 */
         .ocean-grid {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -26,7 +35,8 @@
                 linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
             background-size: 80px 80px;
-            z-index: 1;
+            z-index: 2;
+            pointer-events: none;
         }
 
         /* 게임 상단 HUD (상태창) */
@@ -35,12 +45,13 @@
             top: 20px; left: 50%; transform: translateX(-50%);
             width: 90%; max-width: 1200px;
             display: flex; justify-content: space-between;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.85);
             border: 2px solid #c5a059;
             border-radius: 10px;
             padding: 15px 30px;
             z-index: 100;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
         }
 
         .stat-item {
@@ -48,15 +59,15 @@
             display: flex; align-items: center; gap: 10px;
         }
 
-        .stat-value { color: #ffd700; font-size: 1.5rem; }
+        .stat-value { color: #ffd700; font-size: 1.5rem; transition: color 0.3s; }
 
         /* 플레이어의 배 (유저 요청 이미지) */
         #player-ship {
             position: absolute;
-            width: 160px;
+            width: 140px;
             z-index: 10;
-            transition: all 2.5s ease-in-out;
-            filter: drop-shadow(0 20px 20px rgba(0,0,0,0.8));
+            transition: all 3s cubic-bezier(0.4, 0, 0.2, 1);
+            filter: drop-shadow(0 15px 15px rgba(0,0,0,0.9));
             transform: translate(-50%, -50%);
             display: none;
         }
@@ -66,8 +77,8 @@
             position: absolute;
             bottom: 30px; left: 50%; transform: translateX(-50%);
             width: 90%; max-width: 1200px;
-            height: 30vh;
-            background: rgba(15, 23, 42, 0.9);
+            height: 35vh;
+            background: rgba(15, 23, 42, 0.95);
             border: 3px solid #c5a059;
             border-radius: 15px;
             display: flex; flex-direction: column;
@@ -80,8 +91,8 @@
             position: absolute;
             top: -20px; left: 30px;
             background: #c5a059; color: #000;
-            padding: 5px 20px; border-radius: 5px;
-            font-weight: 900; font-size: 1.2rem;
+            padding: 5px 25px; border-radius: 5px;
+            font-weight: 900; font-size: 1.3rem;
             box-shadow: 0 5px 10px rgba(0,0,0,0.5);
         }
 
@@ -94,19 +105,19 @@
 
         /* 선택지 버튼 영역 */
         .choices-container {
-            display: flex; justify-content: center; gap: 15px;
+            display: flex; justify-content: center; flex-wrap: wrap; gap: 15px;
             padding: 20px;
-            background: rgba(0, 0, 0, 0.4);
+            background: rgba(0, 0, 0, 0.5);
             border-top: 1px solid rgba(197, 160, 89, 0.3);
         }
 
         .choice-btn {
             padding: 12px 25px;
             font-size: 1.1rem; font-weight: bold;
-            color: #fff; background: transparent;
+            color: #fff; background: rgba(197, 160, 89, 0.1);
             border: 2px solid #c5a059; border-radius: 8px;
-            cursor: pointer; transition: 0.3s;
-            flex: 1; max-width: 350px; text-align: center;
+            cursor: pointer; transition: all 0.3s;
+            flex: 1; min-width: 250px; text-align: center;
         }
 
         .choice-btn:hover {
@@ -115,7 +126,7 @@
             box-shadow: 0 5px 15px rgba(197, 160, 89, 0.5);
         }
 
-        /* 타이틀 화면 */
+        /* 타이틀 화면 (유지 요청 부분) */
         #title-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
@@ -136,11 +147,12 @@
 </head>
 <body>
 
+<div class="world-map-bg"></div>
 <div class="ocean-grid"></div>
 
 <div id="title-screen">
     <h1>⚓ 지구촌과 이주의 시대</h1>
-
+    <p>세계시민 교육: 신대륙 발견과 그 엇갈린 결과들</p>
     <button class="start-btn" onclick="startGame()">게임 시작</button>
 </div>
 
@@ -159,11 +171,17 @@
 </div>
 
 <script>
-    // 상태 변수
+    // 게임 내부 스탯 변수 (논리적 연산을 위함)
     let currentScene = 'intro';
     let typingInterval;
     let isTyping = false;
     let fullText = "";
+    
+    let stats = {
+        progress: 0,
+        morale: 100,
+        food: 100
+    };
 
     const ui = {
         title: document.getElementById('title-screen'),
@@ -178,34 +196,46 @@
         food: document.getElementById('food-val')
     };
 
-    // 게임 시작 함수
     function startGame() {
         ui.title.style.display = 'none';
         ui.hud.style.display = 'flex';
         ui.ship.style.display = 'block';
         ui.dialogueBox.style.display = 'flex';
         
-        // 배 초기 위치 설정 (화면 오른쪽/유럽 부근 느낌)
-        moveShip(70, 40);
+        moveShip(75, 35); // 유럽(이베리아 반도) 부근
         loadScene('intro');
     }
 
-    // 배 이동 함수 (비율 %)
     function moveShip(x, y) {
         ui.ship.style.left = `${x}%`;
         ui.ship.style.top = `${y}%`;
     }
 
-    // 상태 업데이트 함수
-    function updateStats(progress, morale, food) {
-        ui.progress.innerText = progress + '%';
-        ui.morale.innerText = morale;
-        ui.food.innerText = food;
-        if(morale < 50) ui.morale.style.color = '#ff4444';
-        if(food < 50) ui.food.style.color = '#ff4444';
+    function updateStatsDisplay() {
+        ui.progress.innerText = stats.progress + '%';
+        ui.morale.innerText = stats.morale;
+        ui.food.innerText = stats.food;
+        
+        ui.morale.style.color = stats.morale < 40 ? '#ff4444' : '#ffd700';
+        ui.food.style.color = stats.food < 40 ? '#ff4444' : '#ffd700';
     }
 
-    // 타이핑 효과
+    function applyStatChanges(changes) {
+        if(!changes) return;
+        if(changes.progress) stats.progress += changes.progress;
+        if(changes.morale) stats.morale += changes.morale;
+        if(changes.food) stats.food += changes.food;
+        
+        // 최댓값, 최솟값 고정
+        if(stats.morale > 100) stats.morale = 100;
+        if(stats.morale < 0) stats.morale = 0;
+        if(stats.food > 100) stats.food = 100;
+        if(stats.food < 0) stats.food = 0;
+        if(stats.progress > 100) stats.progress = 100;
+        
+        updateStatsDisplay();
+    }
+
     function typeText(text, callback) {
         clearInterval(typingInterval);
         isTyping = true;
@@ -215,7 +245,6 @@
         
         typingInterval = setInterval(() => {
             if (i < text.length) {
-                // <br> 태그 처리
                 if(text.charAt(i) === '<') {
                     let tag = "";
                     while(text.charAt(i) !== '>') { tag += text.charAt(i); i++; }
@@ -225,16 +254,15 @@
                     ui.text.innerHTML += text.charAt(i);
                 }
                 i++;
-                ui.text.scrollTop = ui.text.scrollHeight; // 자동 스크롤
+                ui.text.scrollTop = ui.text.scrollHeight;
             } else {
                 clearInterval(typingInterval);
                 isTyping = false;
                 if(callback) callback();
             }
-        }, 30); // 타이핑 속도
+        }, 25);
     }
 
-    // 대화창 클릭 시 스킵
     ui.dialogueBox.addEventListener('click', (e) => {
         if(isTyping && !e.target.classList.contains('choice-btn')) {
             clearInterval(typingInterval);
@@ -244,15 +272,14 @@
         }
     });
 
-    // 씬 로드 함수
     function loadScene(sceneId) {
         currentScene = sceneId;
         const scene = scenes[sceneId];
         
-        ui.choices.innerHTML = ""; // 이전 선택지 삭제
+        ui.choices.innerHTML = ""; 
         ui.speaker.innerText = scene.speaker;
         
-        if(scene.action) scene.action(); // 특정 씬에 배 이동이나 스탯 변경 적용
+        if(scene.action) scene.action(); 
         
         typeText(scene.text, () => {
             showChoices(scene.choices);
@@ -267,6 +294,7 @@
             btn.innerText = choice.text;
             btn.onclick = (e) => {
                 e.stopPropagation();
+                applyStatChanges(choice.stats); // 버튼 누를 때 스탯 변화 적용
                 if(choice.next) loadScene(choice.next);
             };
             ui.choices.appendChild(btn);
@@ -274,77 +302,116 @@
     }
 
     // -----------------------------------------------------------
-    // 📖 게임 시나리오 데이터 (발표 20분용 분량)
+    // 📖 게임 시나리오 데이터 (세계시민의식 및 논리적 선택지 강화)
     // -----------------------------------------------------------
     const scenes = {
         'intro': {
             speaker: '항해사',
-            text: "선장님, 바야흐로 15세기 말입니다. 오스만 제국이 지중해를 장악하여 동방의 향신료(후추) 가격이 금값이 되었습니다. 우리에게는 두 가지 선택이 있습니다. 어떻게 할까요?",
-            action: () => updateStats(5, 100, 100),
+            text: "선장님, 오스만 제국이 지중해를 장악하여 동방의 향신료를 구할 길이 막혔습니다. 우리에게는 두 가지 길이 있습니다. 어떻게 하시겠습니까?",
+            action: () => { stats.progress = 5; updateStatsDisplay(); },
             choices: [
-                { text: "안전하게 아프리카를 돌아 인도로 가자 (포르투갈 방식)", next: 'route_east' },
-                { text: "지구는 둥글다! 과감하게 대서양을 횡단하자 (에스파냐 방식)", next: 'route_west' }
+                { text: "아프리카를 빙 돌아가는 안전한 항로를 택한다.", next: 'route_east', stats: { food: -10 } },
+                { text: "'지구는 둥글다' 대서양을 서쪽으로 가로지른다!", next: 'route_west', stats: { morale: -10 } }
             ]
         },
         'route_east': {
             speaker: '항해사',
-            text: "아프리카 희망봉을 도는 루트군요! 바스쿠 다가마의 길입니다. 하지만 이번 발표의 핵심 주제는 '신대륙'입니다. 선장님, 과감하게 서쪽으로 뱃머리를 돌리는 것이 어떨까요?",
+            text: "바스쿠 다가마의 경로군요! 하지만 아프리카 해안선만 따라가면 진정한 '신대륙'의 놀라운 변화를 마주하기 어렵습니다. 탐험가의 피가 끓지 않으십니까?",
             choices: [
-                { text: "알겠다. 목적지를 서쪽으로 변경한다!", next: 'route_west' }
+                { text: "좋다! 미지의 바다 서쪽 대서양으로 기수를 돌려라!", next: 'route_west', stats: { morale: +10 } }
             ]
         },
         'route_west': {
             speaker: '시스템 (개념 설명)',
-            text: "[이동 경로 및 방식]<br><br>과거에는 갤리선(노를 젓는 배)을 탔지만, 이제 우리는 나침반과 삼각돛을 장착한 '카라벨 선'을 탑니다. 이것이 대서양의 험한 역풍을 뚫고 이동할 수 있었던 과학 기술적 배경입니다. 서쪽으로 출항합니다!",
-            action: () => { moveShip(50, 50); updateStats(20, 90, 80); },
+            text: "[이동 경로 및 방식]<br><br>과거의 갤리선으로는 험난한 대양을 넘을 수 없습니다. 나침반과 삼각돛을 단 '카라벨 선'이 우리의 무기입니다. 과학 기술이 무역의 판도를 바꿀 것입니다. 출항합니다!",
+            action: () => { moveShip(55, 45); applyStatChanges({ progress: 15 }); },
             choices: [
-                { text: "계속 항해한다.", next: 'mid_ocean' }
+                { text: "대서양 한가운데로 전진한다.", next: 'mutiny' }
             ]
         },
-        'mid_ocean': {
+        'mutiny': {
             speaker: '항해사',
-            text: "선장님, 바다에 나온 지 두 달이 넘었습니다. 괴혈병이 돌고 식량이 썩고 있습니다. 선원들이 '지구 끝 낭떠러지'로 떨어질까 봐 폭동을 일으키려 합니다!",
-            action: () => { moveShip(30, 45); updateStats(40, 40, 30); },
+            text: "선장님, 큰일입니다! 항해가 길어지며 괴혈병으로 동료들이 죽어가고, 식량 창고에는 쥐가 들끓습니다. 선원들이 공포에 질려 폭동을 일으키려 합니다!",
+            action: () => { moveShip(40, 48); },
             choices: [
-                { text: "무력으로 진압하고 강행한다", next: 'arrive_america' },
-                { text: "황금이 기다린다며 선원들을 설득한다", next: 'arrive_america' }
+                { text: "반란 주동자를 무력으로 즉각 처형한다! (공포정치)", next: 'arrive_violence', stats: { morale: -40, food: +10 } },
+                { text: "신대륙의 황금을 약속하며 설득한다. (식량 배급 추가)", next: 'arrive_peace', stats: { morale: +10, food: -30 } }
             ]
         },
-        'arrive_america': {
-            speaker: '시스템 (개념 설명)',
-            text: "[이동 집단]<br><br>마침내 육지입니다! 콜럼버스는 이곳을 인도라 착각했죠.<br>초기 이곳에 온 집단은 코르테스나 피사로 같은 '정복자(콘키스타도르)'였습니다. 이들은 황금을 위해 아스텍과 잉카 문명을 무너뜨렸습니다. 이후 가톨릭 선교사들과, 자유를 찾는 청교도 정착민들이 합류했습니다.",
-            action: () => { moveShip(15, 45); updateStats(60, 80, 100); },
+        'arrive_violence': {
+            speaker: '시스템',
+            text: "폭력적인 진압으로 반란은 멈추었지만, 배 안의 분위기는 얼어붙었습니다. (사기 폭락)<br><br>어두운 분위기 속에서, 마침내 수평선 너머로 육지가 보입니다!",
             choices: [
-                { text: "원주민 노동력이 부족해지면 어떻게 됩니까?", next: 'triangular_trade' }
+                { text: "육지에 상륙한다.", next: 'meet_natives' }
+            ]
+        },
+        'arrive_peace': {
+            speaker: '시스템',
+            text: "황금에 대한 희망으로 선원들을 달랬습니다. 시간과 식량은 더 소모되었지만, 신뢰를 유지했습니다.<br><br>그리고 마침내... 육지입니다! 아메리카 대륙에 도착했습니다.",
+            choices: [
+                { text: "육지에 상륙한다.", next: 'meet_natives' }
+            ]
+        },
+        'meet_natives': {
+            speaker: '원주민 족장',
+            text: "(경계하는 눈빛으로) 낯선 자들이여, 바다를 건너온 목적이 무엇인가?<br><br>[이동 집단과 세계시민의식]<br>역사 속 정복자(콘키스타도르)들은 이들을 무력으로 짓밟았습니다. 당신은 어떻게 하시겠습니까?",
+            action: () => { moveShip(25, 45); applyStatChanges({ progress: 20 }); },
+            choices: [
+                { text: "압도적 무력으로 문명을 정복하고 노역을 시킨다.", next: 'conquest_path', stats: { morale: +30 } },
+                { text: "우리는 평화를 원한다. 공정한 교역을 제안한다.", next: 'trade_path', stats: { food: +20 } }
+            ]
+        },
+        'conquest_path': {
+            speaker: '시스템 (개념 설명)',
+            text: "역사 속 피사로와 코르테스가 택한 길입니다. 잉카와 아스텍 문명은 파괴되었고, 유럽인들은 막대한 황금을 얻었지만 씻을 수 없는 피의 역사를 남겼습니다.",
+            choices: [
+                { text: "노동력이 부족해지면 어찌하는가?", next: 'triangular_trade' }
+            ]
+        },
+        'trade_path': {
+            speaker: '시스템 (개념 설명)',
+            text: "평화로운 교역을 시도했습니다. 하지만 비극은 무기가 아닌 곳에서 찾아왔습니다. 유럽인들의 몸에 묻어온 천연두와 홍역 때문에, 면역력이 없던 원주민의 90%가 사망하고 맙니다.",
+            choices: [
+                { text: "전염병으로 노동력이 부족해진 식민지... 다음은?", next: 'triangular_trade' }
             ]
         },
         'triangular_trade': {
+            speaker: '학자',
+            text: "[이동 과정의 특성 - 노예 무역]<br><br>아메리카의 대농장을 운영할 노동력이 사라지자, 유럽인들은 아프리카 흑인들을 강제로 이주시킵니다. 무기→노예→설탕으로 이어지는 잔혹한 '삼각 무역'의 시대가 열린 것입니다. 수많은 아프리카인들이 노예선의 '중간 항로'에서 비참하게 목숨을 잃었습니다.",
+            action: () => { moveShip(45, 60); applyStatChanges({ progress: 20 }); }, // 삼각무역 경로(대서양 중앙 하단)
+            choices: [
+                { text: "이 끔찍한 이주가 세상을 어떻게 바꾸었는가?", next: 'impact_choice' }
+            ]
+        },
+        'impact_choice': {
             speaker: '시스템 (개념 설명)',
-            text: "[이동 과정의 특성 - 삼각 무역]<br><br>매우 잔혹한 역사가 시작됩니다. 광산과 대농장(플랜테이션)의 노동력이 부족해지자, 유럽인들은 아프리카 흑인들을 노예로 사냥하여 신대륙으로 '강제 이주' 시켰습니다.<br>유럽(무기/직물) → 아프리카(노예) → 아메리카(설탕/담배/은)로 이어지는 끔찍한 '삼각 무역망'이 완성된 것입니다.",
-            action: () => moveShip(35, 60), // 대서양 중앙으로 이동
+            text: "[이동의 결과 - 콜럼버스의 교환]<br><br>이 거대한 교류는 세계를 바꿨습니다. 어떤 측면의 결과를 먼저 확인하시겠습니까?",
+            action: () => { moveShip(65, 35); }, // 유럽으로 귀환
             choices: [
-                { text: "이 이주가 세계에 어떤 영향을 미쳤는가?", next: 'exchange_positive' }
+                { text: "긍정적 측면 (식량과 경제)", next: 'impact_economy' },
+                { text: "부정적 측면 (생태계와 문화)", next: 'impact_culture' }
             ]
         },
-        'exchange_positive': {
+        'impact_economy': {
             speaker: '학자',
-            text: "[이동 결과 - 콜럼버스의 교환 (명과 암)]<br><br>이 거대한 이동은 '지구촌'의 토대가 되었습니다. 아메리카의 구황작물(감자, 옥수수)이 유럽과 아시아로 넘어가 인류를 굶주림에서 구했고, 막대한 은이 유입되며 유럽에 '가격 혁명'과 상업 발전이 일어났습니다.",
-            action: () => { moveShip(60, 40); updateStats(80, 100, 100); },
+            text: "아메리카의 감자와 옥수수가 구대륙으로 넘어가 기아를 해결하고 인구를 폭발시켰습니다. 또한 막대한 은이 유럽으로 유입되어 '가격 혁명'이 일어나고, 근대 자본주의 발전의 뼈대가 세워졌습니다.",
             choices: [
-                { text: "부정적인 결과는 없었는가?", next: 'exchange_negative' }
+                { text: "부정적 측면도 확인한다.", next: 'impact_culture' },
+                { text: "발표의 결론으로 넘어간다.", next: 'ending' }
             ]
         },
-        'exchange_negative': {
+        'impact_culture': {
             speaker: '학자',
-            text: "물론 있습니다. 유럽인들이 가져온 눈에 보이지 않는 균(천연두, 홍역 등) 때문에 면역력이 없던 아메리카 원주민 인구의 90% 이상이 사망했습니다. 찬란했던 고유 문명은 파괴되었고, 유럽 문화가 그 자리를 강제로 대체했습니다.",
+            text: "원주민의 찬란한 문화와 언어가 유럽의 가톨릭 문화에 강제로 덮여버렸습니다. 인종차별과 불평등한 경제 구조라는 뼈아픈 상처가 아메리카 대륙에 깊게 새겨졌습니다.",
             choices: [
+                { text: "긍정적 측면도 확인한다.", next: 'impact_economy' },
                 { text: "발표의 결론으로 넘어간다.", next: 'ending' }
             ]
         },
         'ending': {
             speaker: '발표자 (선장)',
-            text: "[결론]<br><br>신대륙 발견과 이주의 시대는 폭력과 희생이 뒤섞인 비극적인 역사이기도 합니다. 하지만 이 과정에서 경제, 식생, 인종, 문화가 대륙을 넘어 교류하게 되었고, 마침내 오늘날 우리가 아는 긴밀히 연결된 거대한 '지구촌'이 탄생하게 되었습니다.<br><br>이상으로 게임형 발표를 마칩니다. 감사합니다!",
-            action: () => updateStats(100, 100, 100),
+            text: "[결론]<br><br>대항해시대의 이주는 탐험의 영광 이면에 착취와 강제 이주라는 어두운 그림자를 가지고 있습니다.<br>하지만 이로 인해 세계는 단절을 끝내고 하나의 '지구촌'으로 연결되었습니다. 세계시민으로서 우리는 이 과거의 빛과 그림자를 모두 기억하고, 더 나은 공존을 고민해야 할 것입니다.<br><br>발표를 마칩니다. 감사합니다.",
+            action: () => { applyStatChanges({ progress: 40, morale: 100, food: 100 }); },
             choices: [
                 { text: "처음으로 돌아가기", next: 'intro' }
             ]
