@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>지구촌과 이주의 시대: 신대륙 발견</title>
+    <style>
+        /* 기본 스타일 및 초기화 */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', 'Noto Sans KR', sans-serif; }
+        body { background-color: #000; overflow: hidden; color: #fff; }
+
+        /* 시작 페이지 스타일 */
+        #intro-screen {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1518182170546-0766de6b6aca?q=80&w=1920&auto=format&fit=crop') center/cover;
+            text-align: center;
+            transition: opacity 1s ease-in-out;
+        }
+        #intro-screen h1 { font-size: 3rem; margin-bottom: 10px; text-shadow: 2px 2px 10px rgba(0,0,0,0.8); }
+        #intro-screen h2 { font-size: 1.5rem; font-weight: 300; margin-bottom: 40px; color: #ddd; }
+        
+        .btn {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            margin: 10px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            border: 2px solid #fff;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+        }
+        .btn:hover { background-color: #fff; color: #000; transform: scale(1.05); }
+
+        /* 게임 화면 스타일 */
+        #game-screen {
+            display: none;
+            height: 100vh;
+            position: relative;
+        }
+        
+        /* 움직이는 바다 배경 (배가 나아가는 연출) */
+        .ocean-bg {
+            position: absolute;
+            top: 0; left: 0; width: 200%; height: 100%;
+            background: url('https://images.unsplash.com/photo-1505159940484-eb2b9f2588e2?q=80&w=1920&auto=format&fit=crop') repeat-x center/cover;
+            animation: moveOcean 20s linear infinite;
+            z-index: 1;
+        }
+        @keyframes moveOcean {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* 배 (고정 시점) */
+        .ship {
+            position: absolute;
+            bottom: 25%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 8rem; /* 이모지로 깔끔하게 처리 */
+            z-index: 2;
+            animation: floating 3s ease-in-out infinite;
+            filter: drop-shadow(0px 20px 10px rgba(0,0,0,0.5));
+        }
+        @keyframes floating {
+            0%, 100% { transform: translateX(-50%) translateY(0) rotate(-2deg); }
+            50% { transform: translateX(-50%) translateY(-20px) rotate(2deg); }
+        }
+
+        /* 예쁜 글래스모피즘 대화창 */
+        .dialog-box {
+            position: absolute;
+            bottom: 5%;
+            left: 10%;
+            width: 80%;
+            background: rgba(10, 20, 40, 0.85);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 30px;
+            z-index: 3;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+        }
+        .dialog-text {
+            font-size: 1.4rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            min-height: 80px;
+        }
+        .choices {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .choice-btn {
+            padding: 12px 24px;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 242, 254, 0.4);
+        }
+        .choice-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 242, 254, 0.6);
+        }
+        .info-tag {
+            display: inline-block;
+            background: #ff7675;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="intro-screen">
+        <h1>지구촌과 이주의 시대</h1>
+        <h2>- 신대륙 발견과 이주의 역사 -</h2>
+        <div>
+            <button class="btn" onclick="toggleFullScreen()">전체화면 켜기</button>
+            <button class="btn" onclick="startGame()" style="background: rgba(255,255,255,0.9); color: #000; font-weight: bold;">항해 시작하기</button>
+        </div>
+    </div>
+
+    <div id="game-screen">
+        <div class="ocean-bg"></div>
+        <div class="ship">⛵</div>
+        <div class="dialog-box">
+            <span id="topic-tag" class="info-tag">프롤로그</span>
+            <div id="dialog-text" class="dialog-text">로딩 중...</div>
+            <div id="choices" class="choices"></div>
+        </div>
+    </div>
+
+    <script>
+        // 전체화면 기능
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    alert(`전체화면 모드를 켤 수 없습니다: ${err.message}`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        // 화면 전환
+        function startGame() {
+            document.getElementById('intro-screen').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'block';
+            showNode('node1');
+        }
+
+        // 시나리오 데이터 (중학교 2학년 수준, 정답으로 유도하는 구조)
+        const storyNodes = {
+            'node1': {
+                tag: '이동 경로 및 방식',
+                text: "15세기 후반, 우리는 인도의 향신료를 구하기 위해 항해를 떠나는 탐험가입니다. 튼튼한 '카라벨 선'과 '나침반'을 챙겼습니다. 자, 어느 방향으로 항해할까요?",
+                choices: [
+                    { text: "아프리카를 돌아 동쪽으로 간다!", next: 'node1_wrong' },
+                    { text: "대서양을 가로질러 서쪽으로 직진한다!", next: 'node2' }
+                ]
+            },
+            'node1_wrong': {
+                tag: '이동 경로 오류',
+                text: "(선원들) 선장님! 아프리카 항로는 이미 포르투갈이 꽉 잡고 있어서 위험합니다! 지구가 둥글다는 것을 믿고 서쪽 대서양으로 가야 합니다!",
+                choices: [
+                    { text: "알겠다. 기수를 서쪽으로 돌려라!", next: 'node2' }
+                ]
+            },
+            'node2': {
+                tag: '이동 과정의 특징',
+                text: "망망대해를 항해한 지 두 달째... 신선한 채소를 먹지 못해 선원들이 '괴혈병'에 걸리고, 무서운 폭풍우에 시달리고 있습니다. 선원들이 폭동을 일으키려 합니다!",
+                choices: [
+                    { text: "너무 위험하다. 유럽으로 돌아가자.", next: 'node2_wrong' },
+                    { text: "나침반을 믿어라! 3일만 더 가보자!", next: 'node3' }
+                ]
+            },
+            'node2_wrong': {
+                tag: '이동 과정의 위기',
+                text: "돌아가려 했으나 식량이 부족하여 돌아갈 수조차 없습니다. 그때 뱃머리에 앉은 새를 발견합니다! 육지가 가깝다는 증거입니다.",
+                choices: [
+                    { text: "좋다, 끝까지 서쪽으로 항해한다!", next: 'node3' }
+                ]
+            },
+            'node3': {
+                tag: '이동 결과 및 이동 집단',
+                text: "드디어 육지를 발견했습니다! 우리는 이곳을 인도라고 착각했지만, 사실은 '신대륙(아메리카)'이었습니다. 이후 누가 이곳으로 이주하게 될까요?",
+                choices: [
+                    { text: "유럽의 돈 많은 귀족들만 이주한다.", next: 'node3_wrong' },
+                    { text: "군인, 선교사, 그리고 새로운 땅을 찾는 농민들이 이주한다.", next: 'node4' }
+                ]
+            },
+            'node3_wrong': {
+                tag: '이동 집단 수정',
+                text: "귀족들은 굳이 위험한 바다를 건너지 않았습니다. 황금을 노리는 군인(정복자), 종교를 전파하려는 선교사, 그리고 종교적 박해를 피하거나 새로운 기회를 찾는 평범한 사람들이 대거 이주하게 됩니다.",
+                choices: [
+                    { text: "그렇군요. 다음으로 넘어가기", next: 'node4' }
+                ]
+            },
+            'node4': {
+                tag: '지구촌에 미친 영향 (콜롬부스의 교환)',
+                text: "신대륙 발견 이후, 두 세계가 만났습니다. 이 이주는 지구촌을 어떻게 바꾸었을까요?",
+                choices: [
+                    { text: "유럽과 아메리카 모두 평화롭게 발전했다.", next: 'node4_wrong' },
+                    { text: "식물과 동물이 교류되었지만, 전염병과 노예 무역이라는 비극도 발생했다.", next: 'ending' }
+                ]
+            },
+            'node4_wrong': {
+                tag: '영향 수정',
+                text: "아메리카의 감자와 옥수수는 유럽의 굶주림을 해결해주었지만, 유럽인들이 가져온 '전염병(천연두 등)'으로 원주민 인구가 급감했습니다. 또한 부족한 노동력을 채우기 위해 아프리카인들이 노예로 강제 이주되는 비극이 시작되었습니다.",
+                choices: [
+                    { text: "이것이 진정한 '지구촌에 미친 영향'이군요.", next: 'ending' }
+                ]
+            },
+            'ending': {
+                tag: '발표 마무리',
+                text: "이처럼 신대륙 발견은 단순한 탐험을 넘어, 인류의 이동 경로를 대서양 중심으로 바꾸었습니다. 식생의 교류와 인구 이동은 오늘날의 다양한 지구촌을 만든 결정적 계기가 되었습니다. 이상으로 발표를 마칩니다!",
+                choices: [
+                    { text: "처음으로 돌아가기", next: 'node1' }
+                ]
+            }
+        };
+
+        // 시나리오 렌더링 함수
+        function showNode(nodeId) {
+            const node = storyNodes[nodeId];
+            document.getElementById('topic-tag').innerText = node.tag;
+            document.getElementById('dialog-text').innerHTML = node.text;
+            
+            const choicesContainer = document.getElementById('choices');
+            choicesContainer.innerHTML = ''; // 기존 버튼 지우기
+
+            node.choices.forEach(choice => {
+                const btn = document.createElement('button');
+                btn.className = 'choice-btn';
+                btn.innerText = choice.text;
+                if (nodeId === 'ending') {
+                    btn.onclick = () => location.reload(); // 처음으로 돌아갈 땐 새로고침
+                } else {
+                    btn.onclick = () => showNode(choice.next);
+                }
+                choicesContainer.appendChild(btn);
+            });
+        }
+    </script>
+</body>
+</html>
